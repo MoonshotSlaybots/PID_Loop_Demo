@@ -75,7 +75,9 @@ void loop() {
   d = error - lastError;              //rate of change of the error
   lastError = error;                  //save this error for the next loop  TODO: first loop lastError would be null
 
-  
+  //sum the PID factors with their coeffients
+  pid = (Kp * p) + (kI * i) + (kD * d);
+
   
 
   //only move motor if enabled switch is on
