@@ -3,7 +3,7 @@
  * and prints it out to the serial port 10 times per second
  */
 
-int potPin = 2;   //input pin for the potentiometer
+int potPin =0;   //input pin for the potentiometer
 int val = 0;      //current value of the potentiometer
 
 void setup() {
