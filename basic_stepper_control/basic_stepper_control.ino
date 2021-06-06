@@ -4,25 +4,39 @@ const int stepsPerRevolution = 200;
 //stepper controller inputs are on digital pins 8-11
 Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
 
-int stepCount = 0;
+long lastStep = 0;
 
 void setup() {
   Serial.begin(9600);
+  myStepper.setSpeed(100);
 }
 
 void loop() {
   // read the sensor value:
   int sensorReading = analogRead(A0);
-  Serial.println(sensorReading);
+  float speed = sensorReading/512.0 - 1.0;
+  Serial.println(speed);
+    
+  checkStep(speed);
+}
+
+//step only if its been long enough since the last step
+//else returns immediatly
+void checkStep(float speed){
+  int steps = 1;
   
-  // map it to a range from 0 to 100:
-  int motorSpeed = map(sensorReading, 0, 1023, 0, 100);
-  // set the motor speed:
-  Serial.println(motorSpeed);
+  if(speed != 0){
+    if (speed < 0){ 
+      speed *= -1;
+      steps *= -1;
+    }
+
+    //1 speed = 0 delay, 0 speed = 200 ms delay
+    float delay = -200.0 * speed + 200;
   
-  if (motorSpeed > 0) {
-    myStepper.setSpeed(motorSpeed);
-    // step 1/200 of a revolution (one step):
-    myStepper.step(stepsPerRevolution / 200);
+    if(lastStep + delay <= millis()){
+      lastStep = millis();
+      myStepper.step(steps);
+    } 
   }
 }
