@@ -64,7 +64,7 @@ void loop() {
 
   p = error;            //proportional is equal to the amount of error
 
-  i = i + error         //integreal accumulates the error each iteration
+  i = i + error;         //integreal accumulates the error each iteration
   
   //Optional: create a dead band so the so integrel won't hunt back and fourth
   //if(abs(error) >  1) i = i + error;  // Integrate error if error > 1
@@ -76,7 +76,7 @@ void loop() {
   lastError = error;                  //save this error for the next loop  TODO: first loop lastError would be null
 
   //sum the PID factors with their coeffients
-  pid = (Kp * p) + (kI * i) + (kD * d);
+  pid = (Kp * p) + (Ki * i) + (Kd * d);
 
   
 
@@ -86,6 +86,53 @@ void loop() {
     
   }  
 
+}
+
+//reads the current angle (-180 to 180) of the pwm encoder on the given pin 
+//takes n samples and averages the output
+float readPWMAngle(int pin, int numSamples){
+  const int minPulseTime = 1; //microseconds
+  const int maxPulseTime = 1025; //microseconds
+  unsigned long samples[numSamples]; //microseconds duty cycle time
+
+  //take samples
+  for(int i=0; i<numSamples; i++){
+    samples[i] = pulseIn(pin, HIGH);
+  }
+
+  //find average
+  unsigned long sum = 0;
+  for(int i=0; i<numSamples; i++){
+    sum += samples[i];
+  }
+  unsigned long dutyCycle = sum / numSamples;
+
+  //convert from duty cycle time to angle
+  return (dutyCycle/maxPulseTime * 360) - 180;
+  
+}
+
+//reads the current angle (-180 to 180) of the analog encoder on the given pin
+//takes n samples and averages the output
+float readAnalogAngle(int pin, int numSamples){
+  const float minVoltage = 0.015;
+  const float maxVoltage = 4.987;
+  int samples[numSamples]; //0-1023
+
+  //take samples
+  for(int i=0; i<numSamples; i++){
+    samples[i] = analogRead(pin); //0-1023
+  }
+
+  //find average
+  float sum = 0.0;
+  for(int i=0; i<numSamples; i++){
+    sum += samples[i];
+  }
+  float voltage = (sum / numSamples)/1024 * 5.0; 
+
+  //convert from voltage to angle
+  return (voltage/maxVoltage * 360) - 180;
 }
 
 
