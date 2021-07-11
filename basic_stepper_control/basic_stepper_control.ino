@@ -1,23 +1,30 @@
-#include <Stepper.h>
+#include "HalfStepper.h"
 
 const int stepsPerRevolution = 200;
 //stepper controller inputs are on digital pins 8-11
-Stepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
+HalfStepper myStepper(stepsPerRevolution, 8, 9, 10, 11);
 
 long lastStep = 0;
 
 void setup() {
   Serial.begin(9600);
-  myStepper.setSpeed(100);
+  myStepper.setSpeed(0);
 }
 
 void loop() {
   // read the sensor value:
   int sensorReading = analogRead(A0);
-  float speed = sensorReading/512.0 - 1.0;
+  float speed = sensorReading/4 - 100.0;
   Serial.println(speed);
-    
-  checkStep(speed);
+
+  myStepper.setSpeed(speed);
+  if(speed<0) {
+    myStepper.step(-1);
+  }else{
+    myStepper.step(1);
+  }
+
+  
 }
 
 //step only if its been long enough since the last step
