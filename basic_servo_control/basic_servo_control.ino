@@ -4,7 +4,7 @@
  */
 #include <Servo.h>
 
-int potPin = 0;   //input pin for the potentiometer
+int potPin = 3;   //input pin for the potentiometer
 int val = 0;      //current value of the potentiometer
 
 int servoPin = 2;   //PWM pin for the servo
@@ -20,8 +20,12 @@ void setup() {
 void loop() {
   val = analogRead(potPin);     //read value from pot
   //Serial.println(val);
-  //scale pot value to be between min and max pwm
-  val = minPWM + (val / 1024.0 * (maxPWM - minPWM));
-  Serial.println(val);
-  servo.writeMicroseconds(val);
+  //scale pot value to be between -1 and 1
+  float s = (val - 512) / 512.0;
+  Serial.println(s);
+  setServoSpeed(s);
+}
+
+void setServoSpeed(float s){
+  servo.writeMicroseconds(minPWM + (s+1)/2.0 * (maxPWM - minPWM));
 }

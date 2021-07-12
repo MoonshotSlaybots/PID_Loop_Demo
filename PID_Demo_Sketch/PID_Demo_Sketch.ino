@@ -1,7 +1,8 @@
+#include <Servo.h>
 
 //Constants
 const int setPositionPot = 3;
-const int currPositionPot = 4;
+const int currPositionEncoder = 4;
 const int Ppot = 0;
 const int Ipot = 1;
 const int Dpot = 2;
@@ -9,11 +10,18 @@ const int Dpot = 2;
 const int invertSetPositionSwitch = 2;
 const int enableMotorSwitch = 3;
 
+const int maxPWM = 1750;  //in microseconds, the duty cycle PWM range to control speed
+const int minPWM = 1250;  //this is specific to the HSR-1425CR servo, tweak as needed for others
+const int servoPin = 2;
+
 //calculation variables
 int setPosition, currPosition, pIn, iIn, dIn;   //inputs
 long error, lastError, pid, now;
 long p, i, d;       //values for p, i, and d factors
 long Kp, Ki, Kd;    //coefficents 
+
+Servo servo;
+
 
 
 
@@ -28,7 +36,7 @@ void setup() {
   pinMode(enableMotorSwitch, INPUT);
 
   //motor setup
-  
+  servo.attach(servoPin);
 
 }
 
@@ -44,13 +52,14 @@ void loop() {
 
   //normally range 0 to 1024, make range -512 to +511
   setPosition = analogRead(setPositionPot) - 512;
-  currPosition = analogRead(currPositionPot) - 512;
+  currPosition = analogRead(currPositionEncoder) - 512;
 
+/*
   //invert setPosition if needed
   if(digitalRead(invertSetPositionSwitch) == HIGH){
     setPosition = setPosition * -1;
   }
-
+*/
 
   //begin PID loop calculations
 
@@ -86,33 +95,15 @@ void loop() {
     
   }  
 
-}
 
-//reads the current angle (-180 to 180) of the pwm encoder on the given pin 
-//takes n samples and averages the output
-float readPWMAngle(int pin, int numSamples){
-  const int minPulseTime = 1; //microseconds
-  const int maxPulseTime = 1025; //microseconds
-  unsigned long samples[numSamples]; //microseconds duty cycle time
-
-  //take samples
-  for(int i=0; i<numSamples; i++){
-    samples[i] = pulseIn(pin, HIGH);
-  }
-
-  //find average
-  unsigned long sum = 0;
-  for(int i=0; i<numSamples; i++){
-    sum += samples[i];
-  }
-  unsigned long dutyCycle = sum / numSamples;
-
-  //convert from duty cycle time to angle
-  return (dutyCycle/maxPulseTime * 360) - 180;
+  //temp testing servo and encoder
+  setServoSpeed(setPosition / 512.0);
+  Serial.println(readAnalogAngle(currPositionEncoder, 1));
   
+
 }
 
-//reads the current angle (-180 to 180) of the analog encoder on the given pin
+//reads the current angle (0 to 360) of the analog encoder on the given pin
 //takes n samples and averages the output
 float readAnalogAngle(int pin, int numSamples){
   const float minVoltage = 0.015;
@@ -135,6 +126,12 @@ float readAnalogAngle(int pin, int numSamples){
   return (voltage/maxVoltage * 360) - 180;
 }
 
+/*
+ * sets the servo speed, -1 for full reverse, 1 for full forward
+ */
+void setServoSpeed(float s){
+  servo.writeMicroseconds(minPWM + (s+1)/2.0 * (maxPWM - minPWM));
+}
 
 //print out all important values
 void debug(){
