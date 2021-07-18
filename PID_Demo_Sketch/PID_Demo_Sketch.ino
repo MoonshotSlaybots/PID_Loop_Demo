@@ -7,23 +7,20 @@ const int Ppot = 0;
 const int Ipot = 1;
 const int Dpot = 2;
 
-const int invertSetPositionSwitch = 2;
-const int enableMotorSwitch = 3;
+const int invertSetPositionSwitch = 3;
+const int enableMotorSwitch = 4;
 
 const int maxPWM = 1750;  //in microseconds, the duty cycle PWM range to control speed
 const int minPWM = 1250;  //this is specific to the HSR-1425CR servo, tweak as needed for others
 const int servoPin = 2;
 
 //calculation variables
-int setPosition, currPosition, pIn, iIn, dIn;   //inputs
-long error, lastError, pid, now;
-long p, i, d;       //values for p, i, and d factors
-long Kp, Ki, Kd;    //coefficents 
+float setPosition, currPosition, pIn, iIn, dIn = 0;   //inputs
+long error, lastError, pid, now = 0;
+long p, i, d = 0;       //values for p, i, and d factors
+long Kp, Ki, Kd = 0;    //coefficents 
 
 Servo servo;
-
-
-
 
 /**
    initialize arduino for operation
@@ -51,15 +48,15 @@ void loop() {
   dIn = analogRead(Dpot);
 
   //normally range 0 to 1024, make range -512 to +511
-  setPosition = analogRead(setPositionPot) - 512;
-  currPosition = analogRead(currPositionEncoder) - 512;
-
-/*
+  setPosition = (analogRead(setPositionPot)/512.0 * 180.0 ) - 180;
+  currPosition = readAnalogAngle(currPositionEncoder, 5);
+  
   //invert setPosition if needed
   if(digitalRead(invertSetPositionSwitch) == HIGH){
+    //TODO: fix inversion, instead of 1 to -1, needs to be 1 to -179 degrees
     setPosition = setPosition * -1;
   }
-*/
+  
 
   //begin PID loop calculations
 
@@ -69,9 +66,9 @@ void loop() {
   Ki = iIn / 4;     // 0 to 255
   Kd = dIn ;      // 0 to 1023
   
-  error =  - setPosition;    //error is differene between where we want to be and where we are
+  error = currPosition - setPosition;    //error is differene between where we want to be and where we are
 
-  p = error;            //proportional is equal to the amount of error
+  p = error;              //proportional is equal to the amount of error
 
   i = i + error;         //integreal accumulates the error each iteration
   
@@ -82,7 +79,7 @@ void loop() {
   i = constrain(i, -2000, 2000);      //stop i from increasing without bound
 
   d = error - lastError;              //rate of change of the error
-  lastError = error;                  //save this error for the next loop  TODO: first loop lastError would be null
+  lastError = error;                  //save this error for the next loop
 
   //sum the PID factors with their coeffients
   pid = (Kp * p) + (Ki * i) + (Kd * d);
@@ -91,15 +88,16 @@ void loop() {
 
   //only move motor if enabled switch is on
   if(digitalRead(enableMotorSwitch) == HIGH){
-
     
   }  
 
 
   //temp testing servo and encoder
   setServoSpeed(setPosition / 512.0);
-  Serial.println(readAnalogAngle(currPositionEncoder, 1));
-  
+  //Serial.println(readAnalogAngle(currPositionEncoder, 1));
+  debug();
+
+
 
 }
 
@@ -135,6 +133,7 @@ void setServoSpeed(float s){
 
 //print out all important values
 void debug(){
+  /*
   Serial.print("error = " + error);
   Serial.print("    ");
   Serial.print("Kp = " + Kp);
@@ -151,4 +150,32 @@ void debug(){
   Serial.print("    ");
   Serial.print("d = " + d);
   Serial.println(" ");
+  */
+
+  Serial.print("Set pos: ");
+  Serial.print(setPosition);
+  Serial.print("    ");
+  
+  Serial.print("pIn: ");
+  Serial.print(pIn);
+  Serial.print("    ");
+  
+  Serial.print("iIn: ");
+  Serial.print(iIn);
+  Serial.print("    ");
+  
+  Serial.print("dIn: ");
+  Serial.print(dIn);
+  Serial.print("    ");
+  
+  Serial.print("invert motor: ");
+  Serial.print(digitalRead(invertSetPositionSwitch) == HIGH);
+  Serial.print("    "); 
+  
+  Serial.print("enable motor: ");
+  Serial.print(digitalRead(enableMotorSwitch) == HIGH);
+  Serial.print("    "); 
+
+  Serial.println();
+
 }
