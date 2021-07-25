@@ -11,7 +11,7 @@ const int invertSetPosSwitch = 3;
 const int enableMotorSwitch = 4;
 const int servoPin = 5;
 
-const int pEnablePin = 6;
+const int pEnablePin = 6; //TODO: setup other channel enable switches
 
 const int maxPWM = 1750;  //in microseconds, the duty cycle PWM range to control speed
 const int minPWM = 1250;  //this is specific to the HSR-1425CR servo, tweak as needed for others
