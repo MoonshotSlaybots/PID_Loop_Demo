@@ -11,14 +11,16 @@ const int invertSetPosSwitch = 3;
 const int enableMotorSwitch = 4;
 const int servoPin = 5;
 
-const int pEnablePin = 6; //TODO: setup other channel enable switches
+const int pEnablePin = 6;
+const int iEnablePin = 7;
+const int dEnablePin = 8;
 
 const int maxPWM = 1750;  //in microseconds, the duty cycle PWM range to control speed
 const int minPWM = 1250;  //this is specific to the HSR-1425CR servo, tweak as needed for others
 
 //calculation variables
 float setPos, currPos, pIn, iIn, dIn = 0.0f;   //analog inputs
-bool enableMotor, invertSetPos, pEnable = false;     //switch inputs
+bool enableMotor, invertSetPos, pEnable, iEnable, dEnable = false;     //switch inputs
 float error, lastError, pid = 0.0f;    //TODO: label
 float p, i, d = 0.0f;       //values for p, i, and d factors
 float Kp, Ki, Kd = 0.0f;    //coefficents 
@@ -41,6 +43,8 @@ void setup() {
   pinMode(invertSetPosSwitch, INPUT);
   pinMode(enableMotorSwitch, INPUT);
   pinMode(pEnablePin, INPUT_PULLUP);
+  pinMode(iEnablePin, INPUT_PULLUP);
+  pinMode(dEnablePin, INPUT_PULLUP);
 
   //motor setup
   servo.attach(servoPin);
@@ -50,9 +54,7 @@ void setup() {
 /**
  * Main loop that controls the motor
  */
-void loop() {
-  Serial.println(digitalRead(pEnablePin) == HIGH);
-  
+void loop() {  
   //set last values
   lastPIn = pIn;
   lastIIn = iIn;
@@ -103,13 +105,24 @@ void loop() {
   //i = i + error;         //integral accumulates the error each iteration
   
   //Optional: create a dead band so the so integrel won't hunt back and fourth
-  if(abs(error) >  5) i = i + error;  // Integrate error if error > 1
-  if(error < 5.0 && error > -5.0) i = 0;               //Clear intergal if zero error
+  if(abs(error) >  3) i = i + error;  // Integrate error if error > 1
+  if(error < 3.0 && error > -3.0) i = 0;               //Clear intergal if zero error
 
-  i = constrain(i, -500.0f, 500.0f);      //stop i from increasing without bound
+  i = constrain(i, -2000.0f, 2000.0f);      //stop i from increasing without bound
 
   d = error - lastError;              //derivitive is the rate of change of the error
   lastError = error;                  //save this error for the next loop
+
+  //disable coefficents
+  if(digitalRead(pEnablePin) == LOW){
+    Kp=0;
+  }
+  if(digitalRead(iEnablePin) == LOW){
+    Ki=0;
+  }
+  if(digitalRead(dEnablePin) == LOW){
+    Kd=0;
+  }
 
   //sum the PID factors with their coeffients
   pid = (Kp * p) + (Ki * i) + (Kd * d);
@@ -124,7 +137,7 @@ void loop() {
 
   //debug print twice a second
   if(millis() >= now){
-    //debug();
+    debug();
     now += 500;
   }
 
