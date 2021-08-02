@@ -67,6 +67,11 @@ void setup() {
 
   //motor setup
   servo.attach(servoPin);
+
+  //CSV output setup
+  Serial.println("\n");
+  Serial.println("time,set_position,current_position,p,i,d,Kp,Ki,Kd,PID");
+  
 }
 
 
@@ -79,7 +84,7 @@ void loop() {
   iIn = analogReadSmoothed(Ipot, lastIIn, 0.9);
   dIn = analogReadSmoothed(Dpot, lastDIn, 0.9);
   setPos = analogReadSmoothed(setPosPot, lastSetPos, 0.9);
-  currPos = readEncoderAngle(currPosEncoder, lastCurrPos, 0.9);
+  currPos = readEncoderAngle(currPosEncoder, lastCurrPos, 0.2);
 
   //set last values for next loop
   lastPIn = pIn;
@@ -126,6 +131,12 @@ void loop() {
   Kd = dIn / 1024.0f * 0.5f;     //slows the motor down as it approaches set point
   
   error = currPos - setPos;    //error is the degrees difference between where we want to be and where we are
+  //if error > 180 or < -180, it is faster to go the other way around
+  if(error > 180){
+    error = error - 360;
+  }else if(error < -180){
+    error = 360 + error;
+  }
 
   p = error;              //proportional is equal to the amount of error measured
 
@@ -167,6 +178,8 @@ void loop() {
     debug();
     now += 500;
   }
+
+  //csvOut();
 
   //loop 100 times per second
   delay(10);
@@ -282,4 +295,31 @@ void debug(){
 
   Serial.println();
 
+}
+
+void csvOut(){
+
+  //Serial.println("Setposition, position, p, i, d, kP, kI, kD, PID");
+  int precision = 8;
+
+  Serial.print(millis()/1000.0f, precision);
+  Serial.print(",");
+  Serial.print(setPos, precision);
+  Serial.print(",");
+  Serial.print(currPos, precision);
+  Serial.print(",");
+  Serial.print(p, precision);
+  Serial.print(",");
+  Serial.print(i, precision);
+  Serial.print(",");
+  Serial.print(d, precision);
+  Serial.print(",");
+  Serial.print(Kp, precision);
+  Serial.print(",");
+  Serial.print(Ki, precision);
+  Serial.print(",");
+  Serial.print(Kd, precision);
+  Serial.print(",");
+  Serial.print(pid, precision);
+  Serial.print("\n");
 }
