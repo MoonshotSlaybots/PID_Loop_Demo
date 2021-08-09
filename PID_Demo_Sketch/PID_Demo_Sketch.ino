@@ -41,7 +41,6 @@ long now = 0L;  //number of milliseconds since the arduino turned on
  * initialize arduino for operation
  */
 void setup() {
-  Serial.begin(9600);   //start serial communication for console
   now = millis() + 500;
   
   //setup input for required analog
@@ -53,7 +52,7 @@ void setup() {
    *switches, where the other are ON-ON switches.
    *the ON-OFF switches tie the pin to ground when in the on position and disconnects it from ground
    *when in the off position. This state is called a *floating pin* and makes reading
-   *an input from the pin unreliable due to background noise.
+   *an input from the pin unreliable due to background noise on the board.
    *A pullup resistor is connected internally on the arduino to the 5v rail and this pin,
    *letting only a small amount of current flow through it.
    *With this, when the pin is not connected to ground, it is connected to 5v
@@ -68,10 +67,16 @@ void setup() {
   //motor setup
   servo.attach(servoPin);
 
-  //CSV output setup
+  //Serial output setup, only print the heading for the type being called
+  //in loop
+  Serial.begin(9600);   //start serial communication for console
   Serial.println("\n");
-  Serial.println("time,set_position,current_position,p,i,d,Kp,Ki,Kd,PID");
   
+  //CSV output setup
+  //Serial.println("time,setPos,currPos,p,i,d,Kp,Ki,Kd,PID");
+  
+  //serial plotter output setup
+  Serial.println("setPos,currPos");
 }
 
 
@@ -83,8 +88,8 @@ void loop() {
   pIn = analogReadSmoothed(Ppot, lastPIn, 0.9);   //range 0 to 1024
   iIn = analogReadSmoothed(Ipot, lastIIn, 0.9);
   dIn = analogReadSmoothed(Dpot, lastDIn, 0.9);
-  setPos = analogReadSmoothed(setPosPot, lastSetPos, 0.9);
-  currPos = readEncoderAngle(currPosEncoder, lastCurrPos, 0.2);
+  setPos = analogReadSmoothed(setPosPot, lastSetPos, 0.2);        //dont use as much smoothing for angle
+  currPos = readEncoderAngle(currPosEncoder, lastCurrPos, 0.2);   //due to it switching from 180 to -180 quickly
 
   //set last values for next loop
   lastPIn = pIn;
@@ -126,9 +131,9 @@ void loop() {
   //If the scale of the units were more similar, say from -5 to 5, to -1 to 1
   //then a Kp closer to 1 would be used
   
-  Kp = pIn / 1024.0f * 0.02f;    //based on motor speed input
+  Kp = pIn / 1024.0f * 0.08f;    //based on motor speed input
   Ki = iIn / 1024.0f * 0.001f;   //based on max i value (constrained later)
-  Kd = dIn / 1024.0f * 0.5f;     //slows the motor down as it approaches set point
+  Kd = dIn / 1024.0f * 0.08f;     //slows the motor down as it approaches set point
   
   error = currPos - setPos;    //error is the degrees difference between where we want to be and where we are
   //if error > 180 or < -180, it is faster to go the other way around
@@ -146,7 +151,7 @@ void loop() {
   if(abs(error) >  1) i = i + error;              // accumulate error if error > 1
   if(error < 1.0 && error > -1.0) i = 0;          //Clear intergal if between -1 and 1 error
 
-  i = constrain(i, -10000.0f, 10000.0f);      //stop i from increasing without bound
+  i = constrain(i, -200.0f, 200.0f);      //stop i from increasing without bound
 
   d = error - lastError;              //derivitive is the rate of change of the error
   lastError = error;                  //save current error for the next loop calculation of d
@@ -173,15 +178,18 @@ void loop() {
     setServoSpeed(0);
   }
 
+  //-------------------output-----------------------
+
   //debug print twice a second
   if(millis() >= now){
-    debug();
+    //debug();
     now += 500;
   }
 
   //csvOut();
-
-  //loop 100 times per second
+  plotterOut();
+  
+  //run loop 100 times per second
   delay(10);
 }
 
@@ -222,7 +230,7 @@ void setServoSpeed(float s){
 }
 
 /*
- * print out all important values 
+ * print out all values 
  */
 void debug(){
 
@@ -299,7 +307,7 @@ void debug(){
 
 void csvOut(){
 
-  //Serial.println("Setposition, position, p, i, d, kP, kI, kD, PID");
+  //Serial.println("time, setPos, currPos, p, i, d, kP, kI, kD, PID");
   int precision = 8;
 
   Serial.print(millis()/1000.0f, precision);
@@ -321,5 +329,14 @@ void csvOut(){
   Serial.print(Kd, precision);
   Serial.print(",");
   Serial.print(pid, precision);
+  Serial.print("\n");
+}
+
+void plotterOut(){
+  int precision = 8;
+
+  Serial.print(setPos, precision);
+  Serial.print(",");
+  Serial.print(currPos, precision);
   Serial.print("\n");
 }
