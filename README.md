@@ -2,7 +2,7 @@
 Arduino project to demonstrate how to tune a PID controller
 
 ## Wiring Diagram
-![Wiring Diagram](/pid_loop_demo_wiring_v2.jpg)
+![Wiring Diagram](/pid_loop_demo_wiring_v3.jpg)
 
 ## Major Tools Needed
 - 3D printer (small parts)
