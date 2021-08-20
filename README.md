@@ -1,6 +1,8 @@
 # PID_Loop_Demo
 Arduino project to demonstrate how to tune a PID controller
 
+## [Wiki](https://github.com/MoonshotSlaybots/PID_Loop_Demo/wiki)
+
 ## Wiring Diagram
 ![Wiring Diagram](/pid_loop_demo_wiring_v3.jpg)
 
@@ -20,3 +22,6 @@ Arduino project to demonstrate how to tune a PID controller
 - PLA Filament for 3D print
 
 ## Known Issues
+- Running the servo power on the same circuit as the inputs causes significant voltage drops when the servo starts moving. The input potentiometers see this voltage change as a change in the input and creates noise in the system. This is because the inputs are analog and sensitive to voltage changes. This could be corrected by isolating the control circuit from the servo power draw or by using a digital method for the input, such as pwm. 
+- Crossing from -180 deg to 180 deg creates a hiccup in the system. This is likely due to the smoothing algorithm trying to smooth the large change in angle rather than an instantaneous change as it should be.
+- High Kd values cuases jitter in the system, this is likely related to the power draw issue listed ealier.
