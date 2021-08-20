@@ -8,7 +8,7 @@ Arduino project to demonstrate how to tune a PID controller
 
 ## Major Tools Needed
 - 3D printer (small parts)
-- Laser cutter (at least 1 square foot)
+- Laser cutter (at least 12 in. by 6 in.)
 
 ## Hardware list
 - 1 x [Arduino Uno](https://store.arduino.cc/usa/arduino-uno-rev3)
