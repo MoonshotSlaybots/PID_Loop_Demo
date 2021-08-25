@@ -21,6 +21,7 @@ const int servoPin = 5;
 
 const int maxPWM = 1750;  //in microseconds, the duty cycle PWM range to control speed
 const int minPWM = 1250;  //this is specific to the HSR-1425CR servo, tweak as needed for others
+const float angleOffset = -95.0;  //offset for the encoder not being moutned perfectly, 0 degrees is up
 
 Servo servo;    //output motor
 
@@ -202,6 +203,13 @@ float readEncoderAngle(int pin, float lastVal, float weight){
 
   float raw = analogRead(pin) / 1024.0f * 5.0f;
   float angle = (raw/maxVoltage * 360) - 180;
+  angle += angleOffset;
+  if (angle > 180){
+    angle -= 360;
+  }
+  if(angle < -180){
+    angle += 360;
+  }
 
   //Smoothing function
   float newVal = weight * lastVal + (1 - weight) * angle; 
